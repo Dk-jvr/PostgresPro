@@ -1,0 +1,41 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: application
+    ports:
+      - "8080:8080"
+    networks:
+      - back
+    depends_on:
+      - db
+
+  db:
+    container_name: pg_container
+    restart: always
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pg_commands
+      POSTGRES_INITDB_SCRIPT: /docker-entrypoint-initdb.d/init_schema.sql
+    networks:
+      - back
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init_schema.sql:/docker-entrypoint-initdb.d/init_schema.sql
+
+  tests:
+    build: .
+    depends_on:
+      - db
+      - app
+    command: go test -v
+    networks:
+      - back
+
+networks:
+  back:
+    driver: bridge
